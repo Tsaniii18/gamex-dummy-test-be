@@ -1,0 +1,110 @@
+# Game-EX API Tests
+
+# Base URL
+@baseUrl = http://localhost:5000
+@refreshToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImlhdCI6MTc0ODE2MTA0NywiZXhwIjoxNzQ4NzY1ODQ3fQ.TV_mWLj_8qjZJUI4ruOUlJZpxKq6Sxef798-1es29eU 
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImlhdCI6MTc0ODE4NzUwNSwiZXhwIjoxNzQ4MTg4NDA1fQ.P8BgkefFonYtH8dFMhm8gf10kWaI6JPjY5hcqtxDYbA
+@contentType = application/json
+
+### Register User
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "username": "testuser",
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+### Login User
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+### Refresh Token
+POST {{baseUrl}}/auth/refresh
+Content-Type: {{contentType}}
+
+{
+  "token": "{{refreshToken}}"
+}
+
+### Logout
+POST {{baseUrl}}/auth/logout
+Content-Type: {{contentType}}
+
+{
+  "token": "{{refreshToken}}"
+}
+
+### Get All Games (Guest)
+GET {{baseUrl}}/games
+
+### Get Game Detail (Guest)
+GET {{baseUrl}}/games/1
+
+### Create Game (Auth)
+POST {{baseUrl}}/games
+Content-Type: {{contentType}}
+Cookie: accessToken={{accessToken}}
+
+{
+  "nama": "Speed Racer",
+  "gambar": "https://storage.googleapis.com/game-ex-img/6229c454-092d-45eb-9446-3be94a9e93e9_Screenshot%20from%202025-05-24%2010-41-47.png",
+  "harga": 199000,
+  "tag": "Racing",
+  "deskripsi": "High speed racing game"
+}
+
+### Update Game (Auth)
+PUT {{baseUrl}}/games/3
+Content-Type: {{contentType}}
+Cookie: accessToken={{accessToken}}
+
+{
+  "deskripsi": "Updated game description"
+}
+
+### Delete Game (Auth)
+DELETE {{baseUrl}}/games/1
+Cookie: accessToken={{accessToken}}
+
+### Buy Game
+POST {{baseUrl}}/users/buy
+Content-Type: {{contentType}}
+Cookie: accessToken={{accessToken}}
+
+{
+  "gameId": 2
+}
+
+
+### set discount
+POST {{baseUrl}}/games/3/discount
+Content-Type: {{contentType}}
+Cookie: accessToken={{accessToken}}
+
+{
+  "discount": 20.3
+}
+
+### Get User
+GET {{baseUrl}}/users/me
+Cookie: accessToken={{accessToken}}
+
+### Get User Library
+GET {{baseUrl}}/users/library
+Cookie: accessToken={{accessToken}}
+
+### Update Game Status
+PATCH {{baseUrl}}/users/library/2
+Content-Type: {{contentType}}
+Cookie: accessToken={{accessToken}}
+
+{
+  "status": "terinstall"
+}
