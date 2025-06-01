@@ -1,14 +1,24 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
-import { generateAccessToken, generateRefreshToken } from '../middlewares/authMiddleware.js';
 
 export const register = async (req, res) => {
   try {
     const { username, email, password } = req.body;
-    
+
+    if (!username || !email || !password) {
+      const msg = `${!username ? "Username" : !email ? "Email" : "Password"} field cannot be empty!`;
+      const error = new Error(msg);
+      error.statusCode = 401;
+      throw error;
+    }
+
     const existingUser = await User.findOne({ where: { email } });
-    if (existingUser) return res.status(400).json({ msg: 'Email already exists' });
+    if (existingUser) {
+      const error = new Error('Email already exists');
+      error.statusCode = 400;
+      throw error;
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await User.create({
@@ -17,9 +27,17 @@ export const register = async (req, res) => {
       password: hashedPassword
     });
 
-    res.status(201).json({ userId: user.id });
+    res.status(201).json({
+      status: 'Success',
+      message: 'User Registered',
+      userId: user.id
+    });
+
   } catch (error) {
-    res.status(500).json({ msg: error.message });
+    res.status(error.statusCode || 500).json({
+      status: 'Error',
+      message: error.message,
+    });
   }
 };
 
@@ -27,51 +45,87 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ where: { email } });
-    if (!user) return res.status(404).json({ msg: 'User not found' });
 
-    const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) return res.status(400).json({ msg: 'Invalid password' });
+    if (user) {
+      const userPlain = user.toJSON();
+      const { password: _, refresh_token: __, ...safeUserData } = userPlain;
 
-    const accessToken = generateAccessToken(user.id);
-    const refreshToken = generateRefreshToken(user.id);
+      const validPassword = await bcrypt.compare(password, user.password);
+      if (!validPassword) {
+        const error = new Error("Password atau email salah");
+        error.statusCode = 400;
+        throw error;
+      }
 
-    await User.update({ refresh_token: refreshToken }, { where: { id: user.id } });
+      const accessToken = jwt.sign(
+        { userId: user.id },
+        process.env.ACCESS_TOKEN_SECRET,
+        { expiresIn: "15m" }
+      );
 
-   res.cookie('accessToken', accessToken, {
-      httpOnly: false,
-      sameSite: "none",
-      maxAge: 15 * 60 * 1000,
-      secure: true,
-    });
+      const refreshToken = jwt.sign(
+        { userId: user.id },
+        process.env.REFRESH_TOKEN_SECRET,
+        { expiresIn: "1d" }
+      );
 
-    res.json({ accessToken, refreshToken });
+      await User.update({ refresh_token: refreshToken }, { where: { id: user.id } });
+
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        sameSite: "none",
+        secure: true,
+        maxAge: 24 * 60 * 60 * 1000
+      });
+
+      res.status(200).json({
+        status: "Success",
+        message: "Login Berhasil",
+        safeUserData,
+        accessToken
+      });
+
+    } else {
+      const error = new Error("Password atau email salah");
+      error.statusCode = 400;
+      throw error;
+    }
+
   } catch (error) {
-    res.status(500).json({ msg: error.message });
+    res.status(error.statusCode || 500).json({
+      status: "Error",
+      message: error.message,
+    });
   }
 };
 
 export const refreshToken = async (req, res) => {
-  const refreshToken = req.body.token;
-  if (!refreshToken) return res.sendStatus(401);
-  
   try {
-    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    const refreshToken = req.cookies.refreshToken;
+    if (!refreshToken) return res.sendStatus(401);
+
     const user = await User.findOne({
-      where: {
-        id: decoded.userId,
-        refresh_token: refreshToken
+      where: { refresh_token: refreshToken }
+    });
+
+    if (!user?.refresh_token) return res.sendStatus(403);
+
+    jwt.verify(
+      refreshToken,
+      process.env.REFRESH_TOKEN_SECRET,
+      (err, decoded) => {
+        if (err) return res.sendStatus(403);
+
+        const newAccessToken = jwt.sign(
+          { userId: decoded.userId },
+          process.env.ACCESS_TOKEN_SECRET,
+          { expiresIn: "15m" }
+        );
+
+        res.json({ accessToken: newAccessToken });
       }
-    });
-    
-    if (!user) return res.sendStatus(403);
-    
-    const newAccessToken = generateAccessToken(user.id);
-    res.cookie('accessToken', newAccessToken, {
-      httpOnly: true,
-      maxAge: 15 * 60 * 1000
-    });
-    
-    res.json({ accessToken: newAccessToken });
+    );
+
   } catch (error) {
     console.error('Refresh token error:', error);
     res.sendStatus(403);
@@ -79,10 +133,16 @@ export const refreshToken = async (req, res) => {
 };
 
 export const logout = async (req, res) => {
-  const refreshToken = req.body.token;
+  const refreshToken = req.cookies.refreshToken;
   if (!refreshToken) return res.sendStatus(204);
-  
-  await User.update({ refresh_token: null }, { where: { refresh_token: refreshToken } });
-  res.clearCookie('accessToken');
-  res.sendStatus(200);
+
+  const user = await User.findOne({
+    where: { refresh_token: refreshToken }
+  });
+
+  if (!user?.refresh_token) return res.sendStatus(204);
+
+  await User.update({ refresh_token: null }, { where: { id: user.id } });
+  res.clearCookie("refreshToken");
+  return res.sendStatus(200);
 };
