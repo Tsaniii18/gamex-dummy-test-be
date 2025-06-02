@@ -8,10 +8,7 @@ import { Storage } from '@google-cloud/storage';
 
 // Inisialisasi Google Cloud Storage
 // const storage = new Storage();
-const storage = new Storage({
-  projectId: 'a-07-451003',
-  keyFilename: process.env.KEY_CREDRENTIALS, // pastikan path ini benar dan file-nya bisa diakses
-});
+const storage = new Storage();
 
 // Referensi bucket
 export const bucket = storage.bucket('game-ex-img');
