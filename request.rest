@@ -1,110 +1,122 @@
-# Game-EX API Tests
+# Game-EX API Requests
+# Base URL: https://game-ex-test-be-722144796089.us-central1.run.app
 
-# Base URL
-@baseUrl = https://game-ex-test-be-722144796089.us-central1.run.app
-@refreshToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImlhdCI6MTc0ODE2MTA0NywiZXhwIjoxNzQ4NzY1ODQ3fQ.TV_mWLj_8qjZJUI4ruOUlJZpxKq6Sxef798-1es29eU 
-@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjE3LCJpYXQiOjE3NDg4Mzc3NjEsImV4cCI6MTc0ODgzODY2MX0.HazSgJpSCc2SL0AKWBQt70UQ8on_61AFCRjV4r8TNRo
-@contentType = application/json
+### Health Check
+GET https://game-ex-test-be-722144796089.us-central1.run.app/health
 
-### Register User
-POST {{baseUrl}}/auth/register
-Content-Type: {{contentType}}
+### 1. User Authentication
 
-{
-  "username": "testuser",
-  "email": "test@example.com",
-  "password": "password123"
-}
-
-### Login User
-POST {{baseUrl}}/auth/login
-Content-Type: {{contentType}}
+#### Register User
+# @name register
+POST https://game-ex-test-be-722144796089.us-central1.run.app/auth/register
+Content-Type: application/json
 
 {
-  "email": "234@234",
-  "password": "234"
+  "username": "HuanAnderson",
+  "email": "huan@google.com",
+  "password": "pass123"
 }
 
-### Refresh Token
-POST {{baseUrl}}/auth/refresh
-Content-Type: {{contentType}}
+#### Login User
+# @name login
+POST https://game-ex-test-be-722144796089.us-central1.run.app/auth/login
+Content-Type: application/json
 
 {
-  "token": "{{refreshToken}}"
+  "email": "huan@google.com",
+  "password": "pass123"
 }
 
-### Logout
-POST {{baseUrl}}/auth/logout
-Content-Type: {{contentType}}
+#### Save Token for Authenticated Requests
+@accessToken = {{login.response.body.accessToken}}
+@refreshToken = {{login.response.body.refreshToken}}
+
+#### Logout User
+POST https://game-ex-test-be-722144796089.us-central1.run.app/auth/logout
+Content-Type: application/json
+Cookie: refreshToken={{refreshToken}}
+
+#### Refresh Access Token
+POST https://game-ex-test-be-722144796089.us-central1.run.app/auth/refresh
+Content-Type: application/json
+Cookie: refreshToken={{refreshToken}}
+
+### 2. Game Management
+
+#### Get All Games
+GET https://game-ex-test-be-722144796089.us-central1.run.app/games
+
+#### Get Game Details
+GET https://game-ex-test-be-722144796089.us-central1.run.app/games/1
+
+#### Create New Game
+# @name createGame
+POST https://game-ex-test-be-722144796089.us-central1.run.app/games
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+Authorization: Bearer {{accessToken}}
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="gambar"; filename="game.jpg"
+Content-Type: image/jpeg
+
+< ./test-assets/game.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="nama"
+
+Hollow Knight
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="harga"
+
+120000
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="tag"
+
+Metroidvania
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="deskripsi"
+
+A beautiful bug-filled world
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+#### Save Created Game ID
+@gameId = {{createGame.response.body.id}}
+
+#### Update Game
+PUT https://game-ex-test-be-722144796089.us-central1.run.app/games/{{gameId}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+Authorization: Bearer {{accessToken}}
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="nama"
+
+Hollow Knight: Silksong
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="harga"
+
+150000
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="tag"
+
+Metroidvania, Adventure
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="deskripsi"
+
+The awaited sequel to Hollow Knight
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+#### Apply Discount to Game
+PATCH https://game-ex-test-be-722144796089.us-central1.run.app/games/{{gameId}}/discount
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
 
 {
-  "token": "{{refreshToken}}"
+  "discount": 20
 }
 
-### Get All Games (Guest)
-GET {{baseUrl}}/games
+#### Get Sales History
+GET https://game-ex-test-be-722144796089.us-central1.run.app/games/{{gameId}}/sales
+Authorization: Bearer {{accessToken}}
 
-### Get Game Detail (Guest)
-GET {{baseUrl}}/games/1
-
-### Create Game (Auth)
-POST {{baseUrl}}/games
-Content-Type: {{contentType}}
-Cookie: accessToken={{accessToken}}
-
-{
-  "nama": "Speed Racer",
-  "gambar": "https://storage.googleapis.com/game-ex-img/6229c454-092d-45eb-9446-3be94a9e93e9_Screenshot%20from%202025-05-24%2010-41-47.png",
-  "harga": 199000,
-  "tag": "Racing",
-  "deskripsi": "High speed racing game"
-}
-
-### Update Game (Auth)
-PUT {{baseUrl}}/games/3
-Content-Type: {{contentType}}
-Cookie: accessToken={{accessToken}}
-
-{
-  "deskripsi": "Updated game description"
-}
-
-### Delete Game (Auth)
-DELETE {{baseUrl}}/games/4
-Cookie: accessToken={{accessToken}}
-
-### Buy Game
-POST {{baseUrl}}/users/buy
-Content-Type: {{contentType}}
-Cookie: accessToken={{accessToken}}
-
-{
-  "gameId": 2
-}
-
-
-### set discount
-POST {{baseUrl}}/games/3/discount
-Content-Type: {{contentType}}
-Cookie: accessToken={{accessToken}}
-
-{
-  "discount": 20.3
-}
-
-### Get User
-GET {{baseUrl}}/users/me
-Cookie: accessToken={{accessToken}}
-
-### Get User Library
-GET {{baseUrl}}/users/library
-Cookie: accessToken={{accessToken}}
-
-### Update Game Status
-PATCH {{baseUrl}}/users/library/2
-Content-Type: {{contentType}}
-Cookie: accessToken={{accessToken}}
-
-{
-  "status": "terinstall"
-}
+#### Delete Game
+DELETE https://game-ex-test-be-722144796089.us-central1.run.app/games/{{gameId}}
+Authorization: Bearer {{accessToken}}
