@@ -1,9 +1,9 @@
 # Game-EX API Tests
 
 # Base URL
-@baseUrl = http://localhost:5000
+@baseUrl = https://game-ex-test-be-722144796089.us-central1.run.app
 @refreshToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImlhdCI6MTc0ODE2MTA0NywiZXhwIjoxNzQ4NzY1ODQ3fQ.TV_mWLj_8qjZJUI4ruOUlJZpxKq6Sxef798-1es29eU 
-@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImlhdCI6MTc0ODE4NzUwNSwiZXhwIjoxNzQ4MTg4NDA1fQ.P8BgkefFonYtH8dFMhm8gf10kWaI6JPjY5hcqtxDYbA
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjE3LCJpYXQiOjE3NDg4Mzc3NjEsImV4cCI6MTc0ODgzODY2MX0.HazSgJpSCc2SL0AKWBQt70UQ8on_61AFCRjV4r8TNRo
 @contentType = application/json
 
 ### Register User
@@ -21,8 +21,8 @@ POST {{baseUrl}}/auth/login
 Content-Type: {{contentType}}
 
 {
-  "email": "test@example.com",
-  "password": "password123"
+  "email": "234@234",
+  "password": "234"
 }
 
 ### Refresh Token
@@ -70,7 +70,7 @@ Cookie: accessToken={{accessToken}}
 }
 
 ### Delete Game (Auth)
-DELETE {{baseUrl}}/games/1
+DELETE {{baseUrl}}/games/4
 Cookie: accessToken={{accessToken}}
 
 ### Buy Game

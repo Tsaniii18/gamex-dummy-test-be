@@ -22,6 +22,6 @@ router.post('/', verifyToken, upload.single('gambar'), createGame);
 router.put('/:id', verifyToken, upload.single('gambar'), updateGame);
 router.patch('/:id/discount', verifyToken, applyDiscount);
 router.get('/:id/sales', verifyToken, getSalesHistory);
-router.delete('/:id', deleteGame);
+router.delete('/:id',verifyToken, deleteGame);
 
 export default router;
